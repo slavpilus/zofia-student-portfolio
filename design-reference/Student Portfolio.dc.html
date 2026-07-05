@@ -1,0 +1,737 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box}
+body{margin:0;font-family:'IBM Plex Sans',system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+.approot{
+ --bg:#eef1f6;--card:#ffffff;--card2:#fbfcfe;--ink:#1b2230;--body:#3a4453;--sub:#667085;--muted:#8a94a6;
+ --border:#e2e7ef;--line:#eaeef4;--track:#eef1f5;--input:#f8fafc;
+ --accent:#2f6fed;--accentSoft:rgba(47,111,237,.10);
+ --done:#12a150;--prog:#e08a00;--pendDot:#8a94a6;--pendCell:#c8d0dc;
+ --doneBg:#e7f6ee;--doneInk:#12a150;--progBg:#fbf1df;--progInk:#b46f00;--pendBg:#eef1f5;--pendInk:#64748b;
+ --chipPendBg:#f4f6fa;--chipPendBorder:#cdd5e0;--chipPendInk:#9aa4b2;
+}
+input,textarea,button{font-family:inherit}
+input:focus,textarea:focus{outline:2px solid var(--accentSoft);outline-offset:0;border-color:var(--accent)}
+textarea{resize:vertical}
+.print-only{display:none}
+@keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+@keyframes ringDraw{from{stroke-dashoffset:var(--circ,0)}to{stroke-dashoffset:0}}
+.fx{animation:fadeUp .5s cubic-bezier(.2,.7,.3,1) both}
+.fx2{animation-delay:.07s}
+.fx3{animation-delay:.13s}
+.unit-card{animation:fadeUp .5s cubic-bezier(.2,.7,.3,1) both;transition:box-shadow .22s ease}
+.unit-card:nth-child(2){animation-delay:.03s}
+.unit-card:nth-child(3){animation-delay:.06s}
+.unit-card:nth-child(4){animation-delay:.09s}
+.unit-card:nth-child(5){animation-delay:.12s}
+.unit-card:nth-child(6){animation-delay:.15s}
+.unit-card:nth-child(7){animation-delay:.18s}
+.unit-card:nth-child(n+8){animation-delay:.21s}
+.unit-card:hover{box-shadow:0 8px 24px rgba(16,24,40,.09)}
+.ringp{animation:ringDraw 1.05s cubic-bezier(.4,0,.2,1) both;transition:stroke-dasharray .6s cubic-bezier(.4,0,.2,1)}
+.approot [style*="var(--done)"],.approot [style*="var(--prog)"]{transition:width .55s cubic-bezier(.4,0,.2,1)}
+.approot button{transition:transform .12s ease}
+.approot button:active{transform:scale(.96)}
+.frow:hover{transform:translateX(3px)}
+@media (prefers-reduced-motion:reduce){*{animation:none !important;transition:none !important}}
+@media print{
+ .no-print{display:none !important}
+ .print-only{display:inline-flex !important}
+ .approot{background:#fff !important}
+ .maxw{padding-left:0 !important;padding-right:0 !important}
+ .unit-card{break-inside:avoid;box-shadow:none !important;margin-bottom:8px !important;animation:none !important}
+}
+</style>
+</helmet>
+<div class="approot" style="min-height:100vh;background:var(--bg);color:var(--ink);{{ themeVars }}">
+
+  <div class="no-print maxw" style="max-width:1240px;margin:0 auto;padding:22px 24px 0;display:flex;flex-wrap:wrap;gap:20px;align-items:center;justify-content:space-between">
+    <div style="display:flex;gap:10px;align-items:center">
+      <span style="font:600 10px 'IBM Plex Mono';letter-spacing:.12em;text-transform:uppercase;color:var(--muted)">View</span>
+      <div style="display:flex;background:var(--card);border:1px solid var(--border);border-radius:11px;padding:3px;gap:2px">
+        <button onClick="{{ onLayoutA }}" style="{{ layoutABtn }}">Command</button>
+        <button onClick="{{ onLayoutB }}" style="{{ layoutBBtn }}">Analytics</button>
+        <button onClick="{{ onLayoutC }}" style="{{ layoutCBtn }}">Sidebar</button>
+      </div>
+    </div>
+    <div style="display:flex;gap:11px;align-items:center">
+      <span style="font:600 10px 'IBM Plex Mono';letter-spacing:.12em;text-transform:uppercase;color:var(--muted)">Theme</span>
+      <div style="display:flex;gap:7px">
+        <sc-for list="{{ swatches }}" as="sw" hint-placeholder-count="5">
+          <button onClick="{{ sw.onClick }}" title="{{ sw.name }}" style="{{ sw.style }}">
+            <span style="flex:1;background:{{ sw.c1 }}"></span>
+            <span style="flex:1;background:{{ sw.c2 }}"></span>
+            <span style="flex:1;background:{{ sw.c3 }}"></span>
+          </button>
+        </sc-for>
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;align-items:center">
+      <button onClick="{{ onExport }}" title="Download your progress as a file" style="padding:8px 13px;border-radius:9px;border:1px solid var(--border);background:var(--card);color:var(--body);font:600 11.5px 'IBM Plex Sans';cursor:pointer">Export</button>
+      <label title="Load progress from a file" style="position:relative;display:inline-flex;align-items:center;padding:8px 13px;border-radius:9px;border:1px solid var(--border);background:var(--card);color:var(--body);font:600 11.5px 'IBM Plex Sans';cursor:pointer">Import<input type="file" accept="application/json,.json" onChange="{{ onImportFile }}" style="position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer"/></label>
+      <button onClick="{{ onPrint }}" title="Print a summary" style="padding:8px 14px;border-radius:9px;border:1px solid var(--accent);background:var(--accent);color:#fff;font:600 11.5px 'IBM Plex Sans';cursor:pointer">Print</button>
+    </div>
+  </div>
+
+  <sc-if value="{{ isA }}" hint-placeholder-val="{{ true }}">
+  <div class="maxw" style="max-width:1240px;margin:0 auto;padding:18px 24px 0">
+    <div class="fx" style="background:var(--card);border:1px solid var(--border);border-radius:18px;padding:28px 30px;box-shadow:0 1px 3px rgba(16,24,40,.05)">
+      <div style="display:flex;flex-wrap:wrap;gap:30px;align-items:center;justify-content:space-between">
+        <div style="min-width:270px;flex:1">
+          <div style="display:flex;align-items:center;gap:12px;margin-bottom:18px">
+            <div style="width:10px;height:30px;border-radius:3px;background:var(--accent)"></div>
+            <div>
+              <div style="font:700 20px/1.15 'IBM Plex Sans';letter-spacing:-.015em">Student Competency Portfolio</div>
+              <div style="font:500 11px/1 'IBM Plex Mono';color:var(--muted);margin-top:5px;text-transform:uppercase;letter-spacing:.1em">PC Degree Apprenticeship · 15 Units</div>
+            </div>
+          </div>
+          <div style="display:flex;flex-wrap:wrap;gap:14px">
+            <label style="display:flex;flex-direction:column;gap:6px">
+              <span style="font:600 9.5px 'IBM Plex Mono';text-transform:uppercase;letter-spacing:.1em;color:var(--muted)">Student</span>
+              <input value="{{ name }}" onInput="{{ onName }}" placeholder="Add name" style="border:1px solid var(--border);border-radius:10px;padding:10px 13px;font-size:14px;width:230px;background:var(--input);color:var(--ink)"/>
+            </label>
+            <label style="display:flex;flex-direction:column;gap:6px">
+              <span style="font:600 9.5px 'IBM Plex Mono';text-transform:uppercase;letter-spacing:.1em;color:var(--muted)">Date</span>
+              <input type="date" value="{{ date }}" onInput="{{ onDate }}" style="border:1px solid var(--border);border-radius:10px;padding:10px 13px;font-size:14px;background:var(--input);color:var(--ink)"/>
+            </label>
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;gap:28px">
+          <div style="position:relative;width:124px;height:124px;flex:none">
+            <svg width="124" height="124" viewBox="0 0 124 124" style="transform:rotate(-90deg)">
+              <circle cx="62" cy="62" r="52" fill="none" stroke-width="12" style="stroke:var(--track)"></circle>
+              <circle class="ringp" cx="62" cy="62" r="52" fill="none" stroke-width="12" stroke-linecap="round" stroke-dasharray="{{ ringDash }}" style="stroke:var(--done);--circ:326.7"></circle>
+            </svg>
+            <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center">
+              <div style="font:700 30px/1 'IBM Plex Sans'">{{ pct }}<span style="font-size:15px">%</span></div>
+              <div style="font:600 9px 'IBM Plex Mono';text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin-top:3px">Complete</div>
+            </div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:11px;min-width:170px">
+            <div style="display:flex;align-items:baseline;gap:9px"><span style="width:9px;height:9px;border-radius:3px;background:var(--done);flex:none"></span><span style="font:700 21px/1 'IBM Plex Sans'">{{ done }}</span><span style="font:500 12.5px;color:var(--sub)">Done</span></div>
+            <div style="display:flex;align-items:baseline;gap:9px"><span style="width:9px;height:9px;border-radius:3px;background:var(--prog);flex:none"></span><span style="font:700 21px/1 'IBM Plex Sans'">{{ prog }}</span><span style="font:500 12.5px;color:var(--sub)">In progress</span></div>
+            <div style="display:flex;align-items:baseline;gap:9px"><span style="width:9px;height:9px;border-radius:3px;background:var(--pendDot);flex:none"></span><span style="font:700 21px/1 'IBM Plex Sans'">{{ pend }}</span><span style="font:500 12.5px;color:var(--sub)">Pending</span></div>
+            <div style="font:600 10.5px 'IBM Plex Mono';color:var(--muted);padding-top:8px;border-top:1px dashed var(--border);letter-spacing:.02em">{{ remaining }} of {{ total }} evidences left</div>
+          </div>
+        </div>
+      </div>
+      <div style="margin-top:24px"><div style="height:12px;border-radius:8px;background:var(--track);overflow:hidden;display:flex"><div style="width:{{ doneW }};background:var(--done)"></div><div style="width:{{ progW }};background:var(--prog)"></div></div></div>
+    </div>
+
+    <div class="no-print fx fx2" style="background:var(--card);border:1px solid var(--border);border-radius:18px;padding:24px 26px;margin-top:20px;box-shadow:0 1px 3px rgba(16,24,40,.05)">
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:14px;margin-bottom:20px">
+        <div style="font:700 15px 'IBM Plex Sans';letter-spacing:-.01em">Evidence map</div>
+        <div style="display:flex;gap:16px">
+          <span style="display:flex;align-items:center;gap:7px;font:500 12px;color:var(--sub)"><span style="width:13px;height:13px;border-radius:4px;background:var(--done)"></span>Done</span>
+          <span style="display:flex;align-items:center;gap:7px;font:500 12px;color:var(--sub)"><span style="width:13px;height:13px;border-radius:4px;background:var(--prog)"></span>In progress</span>
+          <span style="display:flex;align-items:center;gap:7px;font:500 12px;color:var(--sub)"><span style="width:13px;height:13px;border-radius:4px;background:var(--pendCell)"></span>Pending</span>
+        </div>
+      </div>
+      <div style="display:flex;flex-wrap:wrap;gap:20px">
+        <sc-for list="{{ heat }}" as="g" hint-placeholder-count="15">
+          <div style="display:flex;flex-direction:column;gap:7px">
+            <div style="font:600 10px 'IBM Plex Mono';color:var(--muted);letter-spacing:.04em">UNIT {{ g.num }}</div>
+            <div style="display:grid;grid-template-columns:repeat(8,15px);gap:4px">
+              <sc-for list="{{ g.cells }}" as="c" hint-placeholder-count="6">
+                <div title="{{ c.title }}" onClick="{{ c.onClick }}" style="width:15px;height:15px;border-radius:4px;background:{{ c.color }};cursor:pointer"></div>
+              </sc-for>
+            </div>
+          </div>
+        </sc-for>
+      </div>
+      <div style="font:500 11px 'IBM Plex Mono';color:var(--muted);margin-top:18px">Tip — each square is one required evidence. Click to cycle its status.</div>
+    </div>
+  </div>
+  </sc-if>
+
+  <sc-if value="{{ isB }}" hint-placeholder-val="{{ false }}">
+  <div class="maxw" style="max-width:1240px;margin:0 auto;padding:18px 24px 0">
+    <div style="display:flex;flex-wrap:wrap;gap:20px;align-items:flex-end;justify-content:space-between;margin-bottom:16px">
+      <div style="display:flex;align-items:center;gap:12px">
+        <div style="width:10px;height:30px;border-radius:3px;background:var(--accent)"></div>
+        <div>
+          <div style="font:700 20px/1.15 'IBM Plex Sans';letter-spacing:-.015em">Student Competency Portfolio</div>
+          <div style="font:500 11px/1 'IBM Plex Mono';color:var(--muted);margin-top:5px;text-transform:uppercase;letter-spacing:.1em">PC Degree Apprenticeship · 15 Units</div>
+        </div>
+      </div>
+      <div style="display:flex;gap:12px">
+        <input value="{{ name }}" onInput="{{ onName }}" placeholder="Student name" style="border:1px solid var(--border);border-radius:10px;padding:10px 13px;font-size:14px;width:190px;background:var(--input);color:var(--ink)"/>
+        <input type="date" value="{{ date }}" onInput="{{ onDate }}" style="border:1px solid var(--border);border-radius:10px;padding:10px 13px;font-size:14px;background:var(--input);color:var(--ink)"/>
+      </div>
+    </div>
+    <div style="display:flex;gap:14px;flex-wrap:wrap">
+      <div style="flex:1.5;min-width:250px;background:var(--card);border:1px solid var(--border);border-radius:16px;padding:20px 22px;display:flex;align-items:center;gap:20px;box-shadow:0 1px 3px rgba(16,24,40,.04)">
+        <div style="position:relative;width:104px;height:104px;flex:none">
+          <svg width="104" height="104" viewBox="0 0 104 104" style="transform:rotate(-90deg)">
+            <circle cx="52" cy="52" r="44" fill="none" stroke-width="11" style="stroke:var(--track)"></circle>
+            <circle class="ringp" cx="52" cy="52" r="44" fill="none" stroke-width="11" stroke-linecap="round" stroke-dasharray="{{ ringDashSm }}" style="stroke:var(--done);--circ:276.5"></circle>
+          </svg>
+          <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font:700 26px/1 'IBM Plex Sans'">{{ pct }}<span style="font-size:13px">%</span></div>
+        </div>
+        <div>
+          <div style="font:700 15px 'IBM Plex Sans'">Overall completion</div>
+          <div style="font:500 12.5px;color:var(--sub);margin-top:5px">{{ done }} of {{ total }} evidences done</div>
+          <div style="font:600 11px 'IBM Plex Mono';color:var(--muted);margin-top:9px">{{ remaining }} remaining</div>
+        </div>
+      </div>
+      <div style="flex:1;min-width:145px;background:var(--card);border:1px solid var(--border);border-radius:16px;padding:18px 20px;box-shadow:0 1px 3px rgba(16,24,40,.04)">
+        <div style="display:flex;align-items:center;gap:8px"><span style="width:9px;height:9px;border-radius:3px;background:var(--done)"></span><span style="font:600 10px 'IBM Plex Mono';text-transform:uppercase;letter-spacing:.08em;color:var(--muted)">Done</span></div>
+        <div style="font:700 32px/1 'IBM Plex Sans';margin-top:12px">{{ done }}</div>
+        <div style="height:6px;border-radius:5px;background:var(--track);overflow:hidden;margin-top:12px"><div style="width:{{ doneW }};height:100%;background:var(--done)"></div></div>
+      </div>
+      <div style="flex:1;min-width:145px;background:var(--card);border:1px solid var(--border);border-radius:16px;padding:18px 20px;box-shadow:0 1px 3px rgba(16,24,40,.04)">
+        <div style="display:flex;align-items:center;gap:8px"><span style="width:9px;height:9px;border-radius:3px;background:var(--prog)"></span><span style="font:600 10px 'IBM Plex Mono';text-transform:uppercase;letter-spacing:.08em;color:var(--muted)">In progress</span></div>
+        <div style="font:700 32px/1 'IBM Plex Sans';margin-top:12px">{{ prog }}</div>
+        <div style="height:6px;border-radius:5px;background:var(--track);overflow:hidden;margin-top:12px"><div style="width:{{ progW }};height:100%;background:var(--prog)"></div></div>
+      </div>
+      <div style="flex:1;min-width:145px;background:var(--card);border:1px solid var(--border);border-radius:16px;padding:18px 20px;box-shadow:0 1px 3px rgba(16,24,40,.04)">
+        <div style="display:flex;align-items:center;gap:8px"><span style="width:9px;height:9px;border-radius:3px;background:var(--pendDot)"></span><span style="font:600 10px 'IBM Plex Mono';text-transform:uppercase;letter-spacing:.08em;color:var(--muted)">Pending</span></div>
+        <div style="font:700 32px/1 'IBM Plex Sans';margin-top:12px">{{ pend }}</div>
+        <div style="height:6px;border-radius:5px;background:var(--track);overflow:hidden;margin-top:12px"><div style="width:{{ pendW }};height:100%;background:var(--pendDot)"></div></div>
+      </div>
+    </div>
+    <div style="background:var(--card);border:1px solid var(--border);border-radius:16px;padding:20px 24px;margin-top:14px;box-shadow:0 1px 3px rgba(16,24,40,.04)">
+      <div style="font:700 14px 'IBM Plex Sans';margin-bottom:6px">Unit progress</div>
+      <sc-for list="{{ unitNav }}" as="u" hint-placeholder-count="15">
+        <a href="{{ u.href }}" style="display:flex;align-items:center;gap:14px;padding:10px 4px;border-top:1px solid var(--line);text-decoration:none;color:inherit">
+          <span style="width:26px;height:26px;border-radius:7px;background:var(--accentSoft);color:var(--accent);font:700 11px 'IBM Plex Mono';display:flex;align-items:center;justify-content:center;flex:none">{{ u.num }}</span>
+          <span style="flex:1;min-width:0;font:500 13px 'IBM Plex Sans';white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ u.name }}</span>
+          <span style="width:150px;height:7px;border-radius:6px;background:var(--track);overflow:hidden;display:flex;flex:none"><span style="width:{{ u.donePctW }};background:var(--done)"></span><span style="width:{{ u.progPctW }};background:var(--prog)"></span></span>
+          <span style="font:600 11px 'IBM Plex Mono';color:var(--muted);width:46px;text-align:right;flex:none">{{ u.countLabel }}</span>
+        </a>
+      </sc-for>
+    </div>
+  </div>
+  </sc-if>
+
+  <div class="maxw" style="max-width:1240px;margin:0 auto;padding:20px 24px 90px;display:flex;gap:22px;align-items:flex-start">
+    <sc-if value="{{ isC }}" hint-placeholder-val="{{ false }}">
+    <aside style="position:sticky;top:16px;width:296px;flex:none">
+      <div style="background:var(--card);border:1px solid var(--border);border-radius:18px;padding:22px 22px;box-shadow:0 1px 3px rgba(16,24,40,.05)">
+        <div style="display:flex;align-items:center;gap:11px;margin-bottom:16px">
+          <div style="width:9px;height:26px;border-radius:3px;background:var(--accent)"></div>
+          <div style="font:700 15px/1.15 'IBM Plex Sans';letter-spacing:-.01em">Student Competency Portfolio</div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:9px;margin-bottom:16px">
+          <input value="{{ name }}" onInput="{{ onName }}" placeholder="Student name" style="border:1px solid var(--border);border-radius:10px;padding:9px 12px;font-size:13.5px;width:100%;background:var(--input);color:var(--ink)"/>
+          <input type="date" value="{{ date }}" onInput="{{ onDate }}" style="border:1px solid var(--border);border-radius:10px;padding:9px 12px;font-size:13.5px;width:100%;background:var(--input);color:var(--ink)"/>
+        </div>
+        <div style="display:flex;justify-content:center;margin:2px 0 16px">
+          <div style="position:relative;width:120px;height:120px">
+            <svg width="120" height="120" viewBox="0 0 124 124" style="transform:rotate(-90deg)">
+              <circle cx="62" cy="62" r="52" fill="none" stroke-width="12" style="stroke:var(--track)"></circle>
+              <circle class="ringp" cx="62" cy="62" r="52" fill="none" stroke-width="12" stroke-linecap="round" stroke-dasharray="{{ ringDash }}" style="stroke:var(--done);--circ:326.7"></circle>
+            </svg>
+            <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center">
+              <div style="font:700 29px/1 'IBM Plex Sans'">{{ pct }}<span style="font-size:14px">%</span></div>
+              <div style="font:600 8.5px 'IBM Plex Mono';text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin-top:3px">Complete</div>
+            </div>
+          </div>
+        </div>
+        <div style="display:flex;justify-content:space-between;gap:6px;margin-bottom:14px">
+          <div style="text-align:center;flex:1"><div style="font:700 17px 'IBM Plex Sans';color:var(--done)">{{ done }}</div><div style="font:500 9.5px 'IBM Plex Mono';text-transform:uppercase;color:var(--muted);margin-top:2px">Done</div></div>
+          <div style="text-align:center;flex:1"><div style="font:700 17px 'IBM Plex Sans';color:var(--prog)">{{ prog }}</div><div style="font:500 9.5px 'IBM Plex Mono';text-transform:uppercase;color:var(--muted);margin-top:2px">Prog</div></div>
+          <div style="text-align:center;flex:1"><div style="font:700 17px 'IBM Plex Sans';color:var(--pendDot)">{{ pend }}</div><div style="font:500 9.5px 'IBM Plex Mono';text-transform:uppercase;color:var(--muted);margin-top:2px">Pend</div></div>
+        </div>
+        <div style="height:9px;border-radius:7px;background:var(--track);overflow:hidden;display:flex"><div style="width:{{ doneW }};background:var(--done)"></div><div style="width:{{ progW }};background:var(--prog)"></div></div>
+        <div style="font:600 10px 'IBM Plex Mono';color:var(--muted);margin:16px 0 8px;text-transform:uppercase;letter-spacing:.1em">Units</div>
+        <div style="display:flex;flex-direction:column;max-height:300px;overflow:auto">
+          <sc-for list="{{ unitNav }}" as="u" hint-placeholder-count="15">
+            <a href="{{ u.href }}" style="display:flex;align-items:center;gap:9px;padding:7px 2px;text-decoration:none;color:inherit">
+              <span style="width:20px;font:600 10px 'IBM Plex Mono';color:var(--accent);flex:none">{{ u.num }}</span>
+              <span style="flex:1;min-width:0;font:500 11.5px 'IBM Plex Sans';white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ u.name }}</span>
+              <span style="width:44px;height:5px;border-radius:4px;background:var(--track);overflow:hidden;display:flex;flex:none"><span style="width:{{ u.donePctW }};background:var(--done)"></span><span style="width:{{ u.progPctW }};background:var(--prog)"></span></span>
+            </a>
+          </sc-for>
+        </div>
+      </div>
+    </aside>
+    </sc-if>
+
+    <main style="flex:1;min-width:0">
+      <div class="no-print" style="display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin:0 2px 16px">
+        <button onClick="{{ onFilter }}" style="{{ filterBtnStyle }}">Outstanding only</button>
+        <button onClick="{{ onExpandAll }}" style="padding:9px 14px;border-radius:10px;border:1px solid var(--border);background:var(--card);color:var(--body);font:600 12px 'IBM Plex Sans';cursor:pointer">Expand notes</button>
+        <button onClick="{{ onCollapseAll }}" style="padding:9px 14px;border-radius:10px;border:1px solid var(--border);background:var(--card);color:var(--body);font:600 12px 'IBM Plex Sans';cursor:pointer">Collapse all</button>
+        <span style="font:500 11px 'IBM Plex Mono';color:var(--muted);margin-left:2px">Click a marker to cycle: Pending → In progress → Done</span>
+      </div>
+
+      <sc-for list="{{ units }}" as="u" hint-placeholder-count="15">
+        <div class="unit-card" id="{{ u.anchor }}" style="scroll-margin-top:16px;background:var(--card);border:1px solid var(--border);border-radius:16px;padding:22px 24px;margin-bottom:14px;box-shadow:0 1px 3px rgba(16,24,40,.04)">
+          <div style="display:flex;align-items:center;gap:15px;flex-wrap:wrap">
+            <div style="width:36px;height:36px;border-radius:10px;background:var(--accentSoft);color:var(--accent);font:700 15px 'IBM Plex Mono';display:flex;align-items:center;justify-content:center;flex:none">{{ u.num }}</div>
+            <div style="flex:1;min-width:200px">
+              <div style="font:700 15.5px 'IBM Plex Sans';letter-spacing:-.01em">{{ u.name }}</div>
+              <div style="display:flex;align-items:center;gap:12px;margin-top:9px">
+                <div style="flex:1;height:7px;border-radius:6px;background:var(--track);overflow:hidden;display:flex"><div style="width:{{ u.donePctW }};background:var(--done)"></div><div style="width:{{ u.progPctW }};background:var(--prog)"></div></div>
+                <span style="font:600 11px 'IBM Plex Mono';color:var(--muted);flex:none">{{ u.countLabel }}</span>
+              </div>
+            </div>
+          </div>
+          <div style="margin-top:17px;display:flex;flex-direction:column;gap:8px">
+            <sc-for list="{{ u.comps }}" as="c" hint-placeholder-count="4">
+             <div style="display:flex;flex-direction:column;gap:8px">
+              <sc-if value="{{ c.groupHeader }}" hint-placeholder-val="{{ false }}">
+                <div style="display:flex;align-items:center;gap:11px;margin-top:8px">
+                  <span style="font:600 11px 'IBM Plex Mono';text-transform:uppercase;letter-spacing:.09em;color:var(--accent)">{{ c.groupHeader }}</span>
+                  <span style="flex:1;height:1px;background:var(--line)"></span>
+                </div>
+              </sc-if>
+              <div style="border:1px solid var(--line);border-radius:12px;padding:13px 15px;background:var(--card2)">
+                <div style="display:flex;gap:16px;align-items:flex-start;flex-wrap:wrap">
+                  <div style="flex:1;min-width:210px;display:flex;gap:11px;align-items:flex-start">
+                    <span style="font:600 11px 'IBM Plex Mono';color:var(--accent);padding-top:3px;flex:none;letter-spacing:.01em">{{ c.code }}</span>
+                    <div style="display:flex;flex-direction:column;gap:6px;min-width:0">
+                      <span style="font:400 13.5px/1.45 'IBM Plex Sans';color:var(--body)">{{ c.title }}</span>
+                      <sc-if value="{{ c.hasFocus }}" hint-placeholder-val="{{ false }}">
+                        <span style="align-self:flex-start;padding:2px 9px;border-radius:20px;background:var(--accentSoft);color:var(--accent);font:600 10px 'IBM Plex Mono';letter-spacing:.03em;text-transform:uppercase">{{ c.focusName }}</span>
+                      </sc-if>
+                    </div>
+                  </div>
+                  <span class="print-only" style="{{ c.badgeStyle }}">{{ c.printLabel }}</span>
+                  <div class="no-print" style="display:flex;gap:8px;flex:none;align-items:center;flex-wrap:wrap">
+                    <sc-if value="{{ c.multi }}" hint-placeholder-val="{{ false }}">
+                      <span style="font:600 10px 'IBM Plex Mono';color:var(--muted);letter-spacing:.03em">EVIDENCE</span>
+                      <div style="display:flex;gap:5px">
+                        <sc-for list="{{ c.slots }}" as="s" hint-placeholder-count="3">
+                          <button onClick="{{ s.onClick }}" title="{{ s.title }}" style="{{ s.style }}">{{ s.n }}</button>
+                        </sc-for>
+                      </div>
+                      <span style="{{ c.tallyStyle }}">{{ c.tally }}</span>
+                    </sc-if>
+                    <sc-if value="{{ c.single }}" hint-placeholder-val="{{ true }}">
+                      <button onClick="{{ c.onCycleSingle }}" style="{{ c.singleStyle }}">{{ c.singleLabel }}</button>
+                    </sc-if>
+                    <button onClick="{{ c.onToggle }}" title="Toggle notes" style="{{ c.noteBtnStyle }}">✎</button>
+                  </div>
+                </div>
+                <sc-if value="{{ c.expanded }}" hint-placeholder-val="{{ false }}">
+                  <textarea value="{{ c.notes }}" onInput="{{ c.onNotes }}" placeholder="Evidence, reflections, assessor notes…" style="margin-top:11px;width:100%;min-height:66px;border:1px solid var(--border);border-radius:10px;padding:11px 13px;font-size:13px;line-height:1.5;background:var(--card);color:var(--ink)"></textarea>
+                </sc-if>
+              </div>
+             </div>
+            </sc-for>
+          </div>
+        </div>
+      </sc-for>
+    </main>
+
+    <aside class="no-print fx fx3" style="position:sticky;top:16px;width:256px;flex:none;align-self:flex-start;order:3">
+      <div style="background:var(--card);border:1px solid var(--border);border-radius:16px;padding:16px 15px;box-shadow:0 1px 3px rgba(16,24,40,.04)">
+        <div style="display:flex;align-items:baseline;justify-content:space-between;gap:8px;margin-bottom:4px;padding:0 3px">
+          <span style="font:700 13.5px 'IBM Plex Sans'">Focus areas</span>
+          <span style="font:600 10px 'IBM Plex Mono';color:var(--muted)">{{ focusDone }}/{{ focusTotal }}</span>
+        </div>
+        <div style="font:500 10.5px/1.4 'IBM Plex Sans';color:var(--sub);padding:0 3px 10px">Complete when all linked evidences are signed off.</div>
+        <sc-if value="{{ hasActiveFocus }}" hint-placeholder-val="{{ false }}">
+          <button onClick="{{ onClearFocus }}" style="width:100%;margin-bottom:8px;padding:7px 10px;border-radius:9px;border:1px solid var(--accent);background:var(--accentSoft);color:var(--accent);font:600 11px 'IBM Plex Sans';cursor:pointer">Clear “{{ activeFocusName }}” ✕</button>
+        </sc-if>
+        <div style="display:flex;flex-direction:column;gap:2px;max-height:calc(100vh - 150px);overflow:auto">
+          <sc-for list="{{ focusAreas }}" as="f" hint-placeholder-count="19">
+            <button class="frow" onClick="{{ f.onClick }}" title="{{ f.statusLabel }}" style="{{ f.rowStyle }}">
+              <span style="width:8px;height:8px;border-radius:2px;flex:none;{{ f.dotStyle }}"></span>
+              <span style="flex:1;min-width:0;font:600 11.5px 'IBM Plex Sans';color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ f.name }}</span>
+            </button>
+          </sc-for>
+        </div>
+      </div>
+    </aside>
+  </div>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1120,&quot;height&quot;:900}}">
+class Component extends DCLogic {
+  state = Component.load();
+
+  static STORE_KEY = 'psp:v2';
+
+  static THEMES = {
+    slate: { name: 'Slate & Blue', vars: {
+      bg:'#eef1f6',card:'#ffffff',card2:'#fbfcfe',ink:'#1b2230',body:'#3a4453',sub:'#667085',muted:'#8a94a6',
+      border:'#e2e7ef',line:'#eaeef4',track:'#eef1f5',input:'#f8fafc',
+      accent:'#2f6fed',accentSoft:'rgba(47,111,237,.10)',
+      done:'#12a150',prog:'#e08a00',pendDot:'#8a94a6',pendCell:'#c8d0dc',
+      doneBg:'#e7f6ee',doneInk:'#12a150',progBg:'#fbf1df',progInk:'#b46f00',pendBg:'#eef1f5',pendInk:'#64748b',
+      chipPendBg:'#f4f6fa',chipPendBorder:'#cdd5e0',chipPendInk:'#9aa4b2' } },
+    midnight: { name: 'Midnight', vars: {
+      bg:'#0e1420',card:'#18202f',card2:'#141b28',ink:'#e9edf6',body:'#c4ccdb',sub:'#98a3ba',muted:'#6d7a93',
+      border:'#28324a',line:'#222b40',track:'#222b40',input:'#141b28',
+      accent:'#5b8cff',accentSoft:'rgba(91,140,255,.16)',
+      done:'#1db877',prog:'#f0a83a',pendDot:'#7e8aa6',pendCell:'#38425c',
+      doneBg:'rgba(29,184,119,.16)',doneInk:'#4fd39c',progBg:'rgba(240,168,58,.16)',progInk:'#f2bd68',pendBg:'rgba(126,138,166,.16)',pendInk:'#a9b3c9',
+      chipPendBg:'#1b2334',chipPendBorder:'#374363',chipPendInk:'#8492ad' } },
+    pinkgold: { name: 'Pink & Gold', vars: {
+      bg:'#faf4f6',card:'#ffffff',card2:'#fdf8fa',ink:'#3a2731',body:'#5c414d',sub:'#8c6c78',muted:'#b295a1',
+      border:'#f0dde5',line:'#f4e8ee',track:'#f3e4ea',input:'#fdf6f9',
+      accent:'#c8437f',accentSoft:'rgba(200,67,127,.12)',
+      done:'#c1962f',prog:'#e07aa6',pendDot:'#bda3af',pendCell:'#ecd7e0',
+      doneBg:'#f7edd6',doneInk:'#9c7618',progBg:'#fce7f0',progInk:'#b8477f',pendBg:'#f2e6ec',pendInk:'#9a7d8b',
+      chipPendBg:'#fbf3f7',chipPendBorder:'#ecd3de',chipPendInk:'#b295a1' } },
+    forest: { name: 'Forest & Clay', vars: {
+      bg:'#eef2ef',card:'#ffffff',card2:'#f8faf8',ink:'#1c2a24',body:'#374a41',sub:'#5f7268',muted:'#8b9a92',
+      border:'#dde6e0',line:'#e7eee9',track:'#e8efea',input:'#f6f9f7',
+      accent:'#12866f',accentSoft:'rgba(18,134,111,.12)',
+      done:'#4a9d54',prog:'#c98a3c',pendDot:'#8b9a92',pendCell:'#c8d5cd',
+      doneBg:'#e4f4ea',doneInk:'#237a45',progBg:'#f6ecd9',progInk:'#9a6a22',pendBg:'#e9efeb',pendInk:'#5f7268',
+      chipPendBg:'#f2f6f3',chipPendBorder:'#cdd8d1',chipPendInk:'#93a29a' } },
+    graphite: { name: 'Graphite', vars: {
+      bg:'#f3f4f6',card:'#ffffff',card2:'#fafbfc',ink:'#161a20',body:'#39414d',sub:'#606a78',muted:'#98a1ad',
+      border:'#e4e7ec',line:'#eef0f3',track:'#eceef1',input:'#f7f8fa',
+      accent:'#3a4657',accentSoft:'rgba(58,70,87,.10)',
+      done:'#3f9d6a',prog:'#c58a3e',pendDot:'#98a1ad',pendCell:'#cbd1da',
+      doneBg:'#e8f4ee',doneInk:'#2f7a50',progBg:'#f6edda',progInk:'#8f6522',pendBg:'#eceef2',pendInk:'#5a6470',
+      chipPendBg:'#f4f6f8',chipPendBorder:'#d3d9e0',chipPendInk:'#98a1ad' } },
+  };
+  static THEME_ORDER = ['slate','midnight','pinkgold','forest','graphite'];
+
+  static DATA = [
+    { num: 1, name: 'Operating with Law, Professional Practice and the Code of Ethics', comps: [
+      { code: '1.1', req: 2, title: 'Knowledge of professional practice requirements having regard to the Code of Ethics / NDM' },
+    ]},
+    { num: 2, name: 'Processes for Management of Information / Intelligence', comps: [
+      { code: '2.1', req: 2, title: 'Gather and submit intelligence according to force and national protocols' },
+    ]},
+    { num: 3, name: 'Initial Response', comps: [
+      { code: '3.1', req: 3, title: 'Provide initial response to incidents' },
+      { code: '3.2', req: 3, title: 'Use a recognised approach e.g., THRIVE' },
+      { code: '3.3', req: 3, title: 'Communicate effectively with those at the scene' },
+      { code: '3.4a', req: 1, title: 'Control incidents / preserving scene & potential evidence — Intimate Domestic' },
+      { code: '3.4b', req: 1, title: 'Control incidents / preserving scene & potential evidence — Road Traffic Collision' },
+      { code: '3.4c', req: 1, title: 'Control incidents / preserving scene & potential evidence — General Incident' },
+      { code: '3.5a', req: 1, title: 'Recognise and provide support to Vulnerable Person' },
+      { code: '3.5b', req: 1, title: 'Recognise and provide support to Casualties' },
+      { code: '3.6', req: 3, title: 'Provide support to victims and witnesses at the incident' },
+      { code: '3.7', req: 1, title: 'Engage in appropriate multi-agency referrals' },
+      { code: '3.8', req: 3, title: 'Record actions taken and retain appropriate documents' },
+    ]},
+    { num: 4, name: 'Managing Conflict', comps: [
+      { code: '4.1', req: 1, title: 'Apply conflict management and personal safety techniques with issued equipment' },
+      { code: '4.2', req: 2, title: 'Make threat assessments using all available information' },
+      { code: '4.3', req: 2, title: 'Use approved and appropriate communication techniques' },
+      { code: '4.4', req: 2, title: 'Respond appropriately to danger signs and warning signs' },
+      { code: '4.5a', req: 1, title: 'Apply conflict management techniques — Verbally non-compliant individual' },
+      { code: '4.5b', req: 1, title: 'Apply conflict management techniques — Physically non-compliant individual' },
+      { code: '4.6', req: 1, title: 'Record all actions taken and decisions made' },
+    ]},
+    { num: 5, name: 'Support to Vulnerable People, Victims & Witnesses', comps: [
+      { code: '5.1', req: 2, title: 'Communicate effectively with vulnerable people, victims and witnesses' },
+      { code: '5.2', req: 2, title: 'Provide appropriate support to vulnerable people, victims and witnesses' },
+      { code: '5.3', req: 2, title: 'Understanding of vulnerable persons, victims & witnesses & willingness to receive support' },
+      { code: '5.4a', req: 1, title: 'Assess the resilience and capability of the individual, and provide further support' },
+      { code: '5.4b', req: 1, title: 'Assess the resilience and capability of the individual, and make referrals' },
+    ]},
+    { num: 6, name: 'Police Powers and Suspects', comps: [
+      { code: '6.1a', req: 1, title: 'Arrest & detain suspects — Compliant Individual' },
+      { code: '6.1b', req: 1, title: 'Arrest & detain suspects — Non-Compliant Individual' },
+      { code: '6.2', req: 2, title: 'Report suspects in line with legal and organisational requirements and timescales' },
+      { code: '6.3', req: 2, title: 'Apply alternative options regarding disposal of suspects' },
+    ]},
+    { num: 7, name: 'Conducting Police Searches', comps: [
+      { code: '7.1a', req: 1, title: 'Conduct safe, lawful and effective police searches of Premises' },
+      { code: '7.1b', req: 1, title: 'Conduct safe, lawful and effective police searches of Vehicles' },
+      { code: '7.2', req: 2, title: 'Communicate appropriately with those at the search scene' },
+      { code: '7.3', req: 2, title: 'Identify the correct search area' },
+      { code: '7.4', req: 2, title: 'Protect search scene' },
+      { code: '7.5', req: 2, title: 'Prevent loss or contamination of potential evidence' },
+      { code: '7.6', req: 2, title: 'Utilise approved search techniques' },
+      { code: '7.7', req: 1, title: 'Analyse the significance of items found during the search' },
+      { code: '7.8', req: 1, title: 'Seize items covered by identified search powers' },
+      { code: '7.9', req: 1, title: 'Maintain the integrity of seized items' },
+      { code: '7.10', req: 2, title: 'Leave the search scene in the required condition' },
+      { code: '7.11', req: 2, title: 'Document all decisions, actions, options and rationales' },
+    ]},
+    { num: 8, name: 'Conducting Police Searches of a Person', comps: [
+      { code: '8.1a', req: 1, title: 'Conduct police searches of individuals — Individual under arrest' },
+      { code: '8.1b', req: 1, title: 'Conduct police searches of individuals — Individual not under arrest' },
+      { code: '8.2', req: 2, title: 'Use authorised and appropriate systematic search methods' },
+      { code: '8.3', req: 2, title: 'Communicate appropriately with the individual before and during the search' },
+      { code: '8.4', req: 2, title: 'Control individuals to prevent loss of evidence, escape or harm to any person' },
+      { code: '8.5', req: 2, title: 'Maintain personal safety using approved and appropriate techniques' },
+      { code: '8.6', req: 1, title: 'Seize any identified items covered by the relevant search power' },
+      { code: '8.7', req: 1, title: 'Maintain the integrity of seized items' },
+      { code: '8.8', req: 2, title: 'Inform of the results of the search and any further actions to be taken' },
+      { code: '8.9', req: 2, title: 'Document all decisions, actions, options and rationales' },
+    ]},
+    { num: 9, name: 'Conducting Investigations', comps: [
+      { code: '9.1', req: 2, title: 'Plan & conduct an initial investigation' },
+      { code: '9.2', req: 2, title: 'Gather information, intelligence and evidence to support the investigation' },
+      { code: '9.3', req: 2, title: 'Undertake investigative and evidential evaluation throughout the investigation' },
+      { code: '9.4', req: 2, title: 'Brief relevant others regarding the progress of the investigation' },
+      { code: '9.5', req: 2, title: 'Identify the need for any additional support, including escalation' },
+      { code: '9.6A', req: 1, title: 'Identify and work with Victims' },
+      { code: '9.6B', req: 1, title: 'Identify and work with Potential Witnesses' },
+      { code: '9.6C', req: 1, title: 'Identify and work with Suspects' },
+      { code: '9.7', req: 1, title: 'Deal with suspects in line with investigative decision-making' },
+      { code: '9.8', req: 2, title: 'Provide victims, witnesses and their families with information, support and protection in accordance with their needs' },
+      { code: '9.9', req: 2, title: 'Retain and record the details of an investigation' },
+    ]},
+    { num: 10, name: 'Interviewing Victims, Witnesses and Suspects', comps: [
+      { code: '10.1', req: 3, group: 'Interviewing victims & witnesses', title: 'Plan and prepare interviews with victims and witnesses' },
+      { code: '10.2A', req: 2, group: 'Interviewing victims & witnesses', title: 'Conduct interviews with victims' },
+      { code: '10.2B', req: 1, group: 'Interviewing victims & witnesses', title: 'Conduct interviews with witnesses' },
+      { code: '10.3', req: 3, group: 'Interviewing victims & witnesses', title: 'Explain the interview process & confirm understanding' },
+      { code: '10.4', req: 3, group: 'Interviewing victims & witnesses', title: 'Maintain the security and welfare of those present' },
+      { code: '10.5', req: 3, group: 'Interviewing victims & witnesses', title: 'Use approved interview and communication techniques to obtain accurate accounts' },
+      { code: '10.6', req: 1, group: 'Interviewing victims & witnesses', title: 'Use exhibits in line with approved interview techniques' },
+      { code: '10.7', req: 1, group: 'Interviewing victims & witnesses', title: 'Address any contingencies that may arise during the interview' },
+      { code: '10.8', req: 3, group: 'Interviewing victims & witnesses', title: 'Complete all necessary documents and records' },
+      { code: '10.9', req: 3, group: 'Interviewing victims & witnesses', title: 'Close the interview, informing all present of the next steps' },
+      { code: '10.10', req: 3, group: 'Interviewing victims & witnesses', title: 'Evaluate interview and carry out post-interview procedures' },
+      { code: '10.11', req: 2, group: 'Interviewing suspects', title: 'Plan and prepare interviews with suspects' },
+      { code: '10.12', req: 1, group: 'Interviewing suspects', title: 'Deliver pre-interview briefings to legal representatives' },
+      { code: '10.13A', req: 1, group: 'Interviewing suspects', title: 'Conduct interviews with suspects in custody' },
+      { code: '10.13B', req: 1, group: 'Interviewing suspects', title: 'Conduct interviews with suspects out of custody' },
+      { code: '10.14', req: 2, group: 'Interviewing suspects', title: 'Explain the interview process to those present and confirm understanding' },
+      { code: '10.15', req: 2, group: 'Interviewing suspects', title: 'Use the required cautions, special warnings and check suspect\u2019s understanding' },
+      { code: '10.16', req: 2, group: 'Interviewing suspects', title: 'Maintain the security and welfare of those present' },
+      { code: '10.17', req: 2, group: 'Interviewing suspects', title: 'Use approved interview and communication techniques to obtain accurate accounts' },
+      { code: '10.18', req: 1, group: 'Interviewing suspects', title: 'Use exhibits in line with approved interview techniques' },
+      { code: '10.19', req: 1, group: 'Interviewing suspects', title: 'Address any contingencies that may arise during the interview' },
+      { code: '10.20', req: 2, group: 'Interviewing suspects', title: 'Complete all necessary documents and records' },
+      { code: '10.21', req: 2, group: 'Interviewing suspects', title: 'Close the interview, informing all present of the next steps' },
+      { code: '10.22', req: 2, group: 'Interviewing suspects', title: 'Evaluate interview and carry out post-interview procedures' },
+    ]},
+    { num: 11, name: 'Community Policing and Partnership Working', comps: [
+      { code: '11.1', req: 1, title: 'Communicate and engage proactively with communities, including through use of social media' },
+      { code: '11.2', req: 1, title: 'Foster productive partnerships in community policing' },
+    ]},
+    { num: 12, name: 'Response Policing', comps: [
+      { code: '12.1', req: 1, title: 'Provide an effective initial response to a critical or major incident (or one with the potential to become critical)' },
+    ]},
+    { num: 13, name: 'Roads Policing', comps: [
+      { code: '13.1', req: 1, title: 'Apply appropriate procedures and options for the disposal of driving and vehicle offences committed by road users' },
+    ]},
+    { num: 14, name: 'Information, Intelligence and Evidence', comps: [
+      { code: '14.1', req: 1, title: 'Effectively gather, analyse / evaluate and develop information and intelligence' },
+    ]},
+    { num: 15, name: 'Digital Investigations & Criminal Justice', comps: [
+      { code: '15.1', req: 1, title: 'Apply appropriate investigative procedures in respect of digital crime' },
+      { code: '15.2', req: 2, title: 'Manage cases through the criminal justice system' },
+    ]},
+  ];
+
+  static FOCUS = [
+    { id: 1,  name: 'Intelligence',                    codes: ['2.1'] },
+    { id: 2,  name: 'Intimate domestic',               codes: ['3.4a', '3.5a'] },
+    { id: 3,  name: 'Road traffic collision',          codes: ['3.4b', '3.5b'] },
+    { id: 4,  name: 'General incident (initial attend.)', codes: ['3.4c'] },
+    { id: 5,  name: 'Conflict',                        codes: ['4.1', '4.2', '4.3', '4.4', '4.5a', '4.5b', '4.6'] },
+    { id: 6,  name: 'Arrest — compliant',              codes: ['6.1a'] },
+    { id: 7,  name: 'Arrest — non-compliant',          codes: ['6.1b'] },
+    { id: 8,  name: 'Report for offence',              codes: ['6.2'] },
+    { id: 9,  name: 'Alternative disposal',            codes: ['6.3'] },
+    { id: 10, name: 'Premises search',                 codes: ['7.1a'] },
+    { id: 11, name: 'Vehicle search',                  codes: ['7.1b'] },
+    { id: 12, name: 'Section 32 search',               codes: ['8.1a'] },
+    { id: 13, name: 'Stop and search',                 codes: ['8.1b'] },
+    { id: 14, name: 'Investigation',                   codes: ['9.1'] },
+    { id: 15, name: 'Victim interview',                codes: ['10.2A'] },
+    { id: 16, name: 'Witness interviews',              codes: ['10.2B'] },
+    { id: 17, name: 'Suspect interview — in custody',  codes: ['10.13A'] },
+    { id: 18, name: 'Suspect interview — out of custody', codes: ['10.13B'] },
+    { id: 19, name: 'Road traffic incident',           codes: ['13.1'] },
+  ];
+
+  static allCodes() { const o = []; Component.DATA.forEach(u => u.comps.forEach(c => o.push(c.code))); return o; }
+
+  static load() {
+    let d = {};
+    try { d = JSON.parse(localStorage.getItem(Component.STORE_KEY)) || {}; } catch (e) {}
+    return {
+      statuses: d.statuses || {}, notes: d.notes || {}, expanded: {},
+      filterOutstanding: false, focusFilter: null,
+      name: d.name || '', date: d.date || new Date().toISOString().slice(0, 10),
+      layout: d.layout || 'A', theme: d.theme || 'slate',
+    };
+  }
+  save() {
+    try { localStorage.setItem(Component.STORE_KEY, JSON.stringify({
+      statuses: this.state.statuses, notes: this.state.notes,
+      name: this.state.name, date: this.state.date, layout: this.state.layout, theme: this.state.theme,
+    })); } catch (e) {}
+  }
+
+  setStatus(key, s) { this.setState(p => ({ statuses: { ...p.statuses, [key]: s } }), () => this.save()); }
+  cycle(key) {
+    const order = ['pending', 'progress', 'done'];
+    const cur = (this.state.statuses || {})[key] || 'pending';
+    this.setStatus(key, order[(order.indexOf(cur) + 1) % 3]);
+  }
+  setNote(id, v) { this.setState(p => ({ notes: { ...p.notes, [id]: v } }), () => this.save()); }
+  toggleNotes(id) { this.setState(p => ({ expanded: { ...p.expanded, [id]: !(p.expanded || {})[id] } })); }
+  setField(k, v) { this.setState({ [k]: v }, () => this.save()); }
+  expandAll() { const e = {}; Component.allCodes().forEach(c => e[c] = true); this.setState({ expanded: e }); }
+  collapseAll() { this.setState({ expanded: {} }); }
+  toggleFilter() { this.setState(p => ({ filterOutstanding: !p.filterOutstanding })); }
+  toggleFocus(id) { this.setState(p => ({ focusFilter: p.focusFilter === id ? null : id })); }
+
+  exportData() {
+    const data = { statuses: this.state.statuses || {}, notes: this.state.notes || {}, name: this.state.name || '', date: this.state.date || '', version: 2 };
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = (this.state.name ? this.state.name.trim().replace(/\s+/g, '_') + '_' : '') + 'portfolio.json';
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }
+  importData(e) {
+    const file = e.target.files && e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        const d = JSON.parse(reader.result);
+        this.setState({ statuses: d.statuses || {}, notes: d.notes || {}, name: d.name || '', date: d.date || this.state.date }, () => this.save());
+      } catch (err) { alert('Could not read that file — please choose a portfolio export (.json).'); }
+    };
+    reader.readAsText(file);
+    e.target.value = '';
+  }
+
+  renderVals() {
+    const S = this.state;
+    const statuses = S.statuses || {}, notes = S.notes || {}, expanded = S.expanded || {};
+    const filter = S.filterOutstanding;
+    const layout = S.layout || 'A';
+    const themeKey = Component.THEMES[S.theme] ? S.theme : 'slate';
+    const T = Component.THEMES[themeKey].vars;
+    const themeVars = Object.keys(T).map(k => `--${k}:${T[k]}`).join(';') + ';';
+
+    const meta = {
+      done:     { label: 'Done',        fill: 'var(--done)',     bg: 'var(--doneBg)', ink: 'var(--doneInk)', cell: 'var(--done)' },
+      progress: { label: 'In progress', fill: 'var(--prog)',     bg: 'var(--progBg)', ink: 'var(--progInk)', cell: 'var(--prog)' },
+      pending:  { label: 'Pending',     fill: 'var(--pendDot)',  bg: 'var(--pendBg)', ink: 'var(--pendInk)', cell: 'var(--pendCell)' },
+    };
+    const stOf = key => statuses[key] || 'pending';
+
+    const reqOf = {}; Component.DATA.forEach(u => u.comps.forEach(c => reqOf[c.code] = c.req));
+    const focusByCode = {}; Component.FOCUS.forEach(f => f.codes.forEach(cd => focusByCode[cd] = f.name));
+    const activeFocus = Component.FOCUS.find(f => f.id === S.focusFilter) || null;
+    const focusCodes = activeFocus ? new Set(activeFocus.codes) : null;
+
+    const slotBase = "width:30px;height:30px;border-radius:8px;font:600 11px 'IBM Plex Mono';cursor:pointer;display:inline-flex;align-items:center;justify-content:center;transition:all .12s;";
+    const slotStyle = s => s === 'pending'
+      ? slotBase + 'border:1px dashed var(--chipPendBorder);background:var(--chipPendBg);color:var(--chipPendInk);'
+      : slotBase + `border:1px solid ${meta[s].fill};background:${meta[s].fill};color:#fff;`;
+    const singleBase = "min-width:100px;text-align:center;padding:7px 14px;border-radius:9px;font:600 10px 'IBM Plex Mono';letter-spacing:.05em;text-transform:uppercase;cursor:pointer;transition:all .12s;";
+    const singleStyle = s => s === 'pending'
+      ? singleBase + 'border:1px dashed var(--chipPendBorder);background:var(--chipPendBg);color:var(--chipPendInk);'
+      : singleBase + `border:1px solid ${meta[s].fill};background:${meta[s].fill};color:#fff;`;
+
+    let total = 0, done = 0, prog = 0, pend = 0;
+    Component.DATA.forEach(u => u.comps.forEach(c => {
+      for (let i = 0; i < c.req; i++) { total++; const s = stOf(c.code + '#' + i); if (s === 'done') done++; else if (s === 'progress') prog++; else pend++; }
+    }));
+    const pct = total ? Math.round(done / total * 100) : 0;
+    const dash = r => `${(pct / 100 * 2 * Math.PI * r).toFixed(1)} ${(2 * Math.PI * r).toFixed(1)}`;
+
+    const unitNav = [];
+    const units = Component.DATA.map(u => {
+      let uTot = 0, uDone = 0, uProg = 0;
+      let comps = u.comps.map(c => {
+        let di = 0, pi = 0; const slots = [];
+        for (let i = 0; i < c.req; i++) {
+          const key = c.code + '#' + i; const s = stOf(key); const m = meta[s];
+          uTot++; if (s === 'done') { di++; uDone++; } else if (s === 'progress') { pi++; uProg++; }
+          slots.push({ n: i + 1, title: `${c.code} · evidence ${i + 1} of ${c.req} — ${m.label}`, style: slotStyle(s), onClick: () => this.cycle(key) });
+        }
+        const agg = di === c.req ? 'done' : (di > 0 || pi > 0 ? 'progress' : 'pending');
+        const m = meta[agg]; const single = c.req === 1; const s0 = stOf(c.code + '#0');
+        return {
+          id: c.code, code: c.code, title: c.title, req: c.req, group: c.group || '', single: false, multi: true,
+          focusName: focusByCode[c.code] || '', hasFocus: !!focusByCode[c.code],
+          slots, tally: di + ' / ' + c.req,
+          tallyStyle: `font:600 11px 'IBM Plex Mono';color:${di === c.req ? 'var(--done)' : 'var(--muted)'};min-width:30px`,
+          singleStyle: singleStyle(s0), singleLabel: meta[s0].label, onCycleSingle: () => this.cycle(c.code + '#0'),
+          printLabel: di + ' / ' + c.req + ' done',
+          badgeStyle: `align-items:center;padding:5px 11px;border-radius:20px;font:600 11px 'IBM Plex Sans';background:${m.bg};color:${m.ink}`,
+          expanded: !!expanded[c.code], notes: notes[c.code] || '',
+          noteBtnStyle: (expanded[c.code]
+            ? "flex:none;width:32px;height:29px;border-radius:8px;cursor:pointer;font-size:13px;border:1px solid var(--accent);background:var(--accentSoft);color:var(--accent);"
+            : "flex:none;width:32px;height:29px;border-radius:8px;cursor:pointer;font-size:13px;border:1px solid var(--border);background:var(--card);color:var(--muted);"),
+          onToggle: () => this.toggleNotes(c.code), onNotes: e => this.setNote(c.code, e.target.value),
+          _agg: agg,
+        };
+      });
+      const donePctW = (uTot ? uDone / uTot * 100 : 0) + '%';
+      const progPctW = (uTot ? uProg / uTot * 100 : 0) + '%';
+      unitNav.push({ num: u.num, name: u.name, href: '#unit-' + u.num, countLabel: uDone + '/' + uTot, donePctW, progPctW });
+      if (focusCodes) comps = comps.filter(c => focusCodes.has(c.code));
+      if (filter) comps = comps.filter(c => c._agg !== 'done');
+      comps.forEach((c, i) => { c.groupHeader = (c.group && (i === 0 || comps[i - 1].group !== c.group)) ? c.group : ''; });
+      return { num: u.num, name: u.name, anchor: 'unit-' + u.num, comps, countLabel: uDone + ' / ' + uTot, donePctW, progPctW, _empty: (filter || focusCodes) && comps.length === 0 };
+    }).filter(u => !u._empty);
+
+    const heat = Component.DATA.map(u => {
+      const cells = [];
+      u.comps.forEach(c => { for (let i = 0; i < c.req; i++) { const key = c.code + '#' + i; const s = stOf(key); const m = meta[s];
+        cells.push({ color: m.cell, title: `${c.code} · evidence ${i + 1}/${c.req} — ${m.label}`, onClick: () => this.cycle(key) }); } });
+      return { num: u.num, cells };
+    });
+
+    let focusDone = 0;
+    const focusAreas = Component.FOCUS.map(f => {
+      let ft = 0, fd = 0;
+      f.codes.forEach(cd => { const r = reqOf[cd] || 0; for (let i = 0; i < r; i++) { ft++; if (stOf(cd + '#' + i) === 'done') fd++; } });
+      const status = ft && fd === ft ? 'done' : (fd > 0 ? 'progress' : 'pending');
+      if (status === 'done') focusDone++;
+      const m = meta[status]; const active = S.focusFilter === f.id;
+      return {
+        id: f.id, name: f.name, label: fd + ' / ' + ft, barW: (ft ? fd / ft * 100 : 0) + '%', barColor: m.cell,
+        dotStyle: `background:${m.cell}`,
+        statusLabel: status === 'done' ? 'Complete' : (status === 'progress' ? 'In progress' : 'Not started'),
+        badgeStyle: `align-items:center;padding:4px 9px;border-radius:20px;font:600 10px 'IBM Plex Sans';background:${m.bg};color:${m.ink}`,
+        rowStyle: "text-align:left;display:flex;flex-direction:row;align-items:center;gap:9px;padding:9px 10px;border-radius:10px;cursor:pointer;transition:all .12s;width:100%;" + (active ? 'background:var(--accentSoft);border:1px solid var(--accent);' : 'background:transparent;border:1px solid transparent;'),
+        onClick: () => this.toggleFocus(f.id),
+      };
+    });
+
+    const segBase = "padding:7px 13px;border-radius:8px;border:none;font:600 11.5px 'IBM Plex Sans';cursor:pointer;background:transparent;color:var(--sub);";
+    const segOn = "padding:7px 13px;border-radius:8px;border:none;font:600 11.5px 'IBM Plex Sans';cursor:pointer;background:var(--accent);color:#fff;";
+    const swatches = Component.THEME_ORDER.map(k => {
+      const v = Component.THEMES[k].vars; const sel = k === themeKey;
+      return { name: Component.THEMES[k].name, c1: v.accent, c2: v.done, c3: v.prog,
+        style: 'display:flex;width:48px;height:26px;border-radius:8px;overflow:hidden;cursor:pointer;padding:0;' + (sel ? 'border:2px solid var(--accent);box-shadow:0 0 0 2px var(--accentSoft);' : 'border:1px solid var(--border);'),
+        onClick: () => this.setField('theme', k) };
+    });
+
+    const toolBtn = "padding:9px 16px;border-radius:10px;font:600 12px 'IBM Plex Sans';cursor:pointer;";
+    const filterBtnStyle = filter ? toolBtn + 'border:1px solid var(--accent);background:var(--accent);color:#fff;' : toolBtn + 'border:1px solid var(--border);background:var(--card);color:var(--body);';
+    const exportBtnStyle = toolBtn + 'border:1px solid var(--accent);background:var(--accent);color:#fff;';
+
+    return {
+      themeVars,
+      isA: layout === 'A', isB: layout === 'B', isC: layout === 'C',
+      onLayoutA: () => this.setField('layout', 'A'), onLayoutB: () => this.setField('layout', 'B'), onLayoutC: () => this.setField('layout', 'C'),
+      layoutABtn: layout === 'A' ? segOn : segBase, layoutBBtn: layout === 'B' ? segOn : segBase, layoutCBtn: layout === 'C' ? segOn : segBase,
+      swatches,
+      pct, ringDash: dash(52), ringDashSm: dash(44),
+      done, prog, pend, total, remaining: total - done,
+      doneW: (total ? done / total * 100 : 0) + '%', progW: (total ? prog / total * 100 : 0) + '%', pendW: (total ? pend / total * 100 : 0) + '%',
+      name: S.name, date: S.date,
+      onName: e => this.setField('name', e.target.value), onDate: e => this.setField('date', e.target.value),
+      filterBtnStyle, exportBtnStyle,
+
+      units, unitNav, heat,
+      focusAreas, focusDone, focusTotal: Component.FOCUS.length,
+      hasActiveFocus: !!activeFocus, activeFocusName: activeFocus ? activeFocus.name : '', onClearFocus: () => this.setState({ focusFilter: null }),
+    };
+  }
+}
+</script>
+</body>
+</html>
