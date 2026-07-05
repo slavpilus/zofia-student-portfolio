@@ -1,6 +1,7 @@
 "use client";
 
 import { ChangeEvent, CSSProperties, MutableRefObject, useEffect, useMemo, useRef, useState } from "react";
+import { BrandMark } from "@/components/BrandMark";
 import {
   ALL_COMPETENCY_CODES,
   DATA,
@@ -349,9 +350,8 @@ export function PortfolioApp() {
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
-    const prefix = portfolio.name.trim() ? `${portfolio.name.trim().replace(/\s+/g, "_")}_` : "";
     link.href = url;
-    link.download = `${prefix}portfolio.json`;
+    link.download = "student_portfolio.json";
     document.body.appendChild(link);
     link.click();
     link.remove();
@@ -746,7 +746,7 @@ function SidebarOverview({
     <aside className="left-sidebar no-print">
       <section className="sidebar-card">
         <div className="sidebar-title">
-          <span />
+          <BrandMark className="sidebar-logo" />
           <h1>Student Competency Portfolio</h1>
         </div>
         <div className="sidebar-fields">
@@ -824,7 +824,7 @@ function FocusRail({
 function TitleBlock() {
   return (
     <div className="title-block">
-      <div className="accent-bar" />
+      <BrandMark />
       <div>
         <h1>Student Competency Portfolio</h1>
         <p>PC Degree Apprenticeship · 15 Units</p>

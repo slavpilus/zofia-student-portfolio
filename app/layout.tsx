@@ -18,7 +18,10 @@ const plexMono = IBM_Plex_Mono({
 
 export const metadata: Metadata = {
   title: "Student Competency Portfolio",
-  description: "PCDA student competency portfolio tracker"
+  description: "PCDA student competency portfolio tracker",
+  icons: {
+    icon: [{ url: "/icon.svg?v=portfolio-mark-1", type: "image/svg+xml" }]
+  }
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
